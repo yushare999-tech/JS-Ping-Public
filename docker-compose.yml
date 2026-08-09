@@ -1,0 +1,17 @@
+services:
+  js-ping-node:
+    image: ghcr.io/yushare999-tech/js-ping-node:latest
+    container_name: js-ping-node
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.yaml:/app/config.yaml
+    restart: always
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: js-ping-watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30 --cleanup js-ping-node
+    restart: always

@@ -6,6 +6,8 @@
 #   Features:
 #     - 100% Python-Independent (Go-native Docker Compose v2)
 #     - Auto-installs Docker & Docker Compose v2 standalone binary on Minimal OS
+#     - Auto-installs bash-completion (Docker Tab Completion)
+#     - Auto-adds current user to 'docker' group for non-root docker usage
 # ==============================================================================
 
 set -e
@@ -23,26 +25,26 @@ cd "$DIR"
 
 echo "=========================================================="
 echo "   🏓 JS-Ping Public Cluster Node Deployment Helper"
-echo "   Release: Official Public GHCR Container (Python 0%)"
+echo "   Release: Official Public GHCR Container"
 echo "=========================================================="
 
-# 1. Verify Docker installation & Auto-install Docker if missing on Minimal OS
+# 1. Verify Docker installation & Auto-install Docker if missing (apt/yum/dnf + get.docker.com fallback)
 if ! command -v docker &> /dev/null; then
-    echo "[Info] Docker is not installed on this Minimal OS."
+    echo "[Info] Docker is not installed on this system."
     echo "[Info] Starting Native Package Manager Auto-Installation..."
     
     # Try native OS package manager first (apt-get / dnf / yum)
     if command -v apt-get &> /dev/null; then
-        echo "[Info] Detected Ubuntu/Debian system. Installing docker.io via apt-get..."
+        echo "[Info] Detected Ubuntu/Debian system. Installing docker.io & bash-completion..."
         export DEBIAN_FRONTEND=noninteractive
         apt-get update -y || true
-        apt-get install -y docker.io || true
+        apt-get install -y docker.io bash-completion || true
     elif command -v dnf &> /dev/null; then
-        echo "[Info] Detected RHEL/Fedora/Rocky system. Installing docker via dnf..."
-        dnf install -y docker || true
+        echo "[Info] Detected RHEL/Fedora/Rocky system. Installing docker & bash-completion..."
+        dnf install -y docker bash-completion || true
     elif command -v yum &> /dev/null; then
-        echo "[Info] Detected CentOS/RHEL system. Installing docker via yum..."
-        yum install -y docker || true
+        echo "[Info] Detected CentOS/RHEL system. Installing docker & bash-completion..."
+        yum install -y docker bash-completion || true
     fi
 
     # Fallback to official get.docker.com script if native package manager didn't set up docker
@@ -65,6 +67,20 @@ if ! command -v docker &> /dev/null; then
         exit 1
     fi
     echo "✅ Docker installed and service daemon started successfully!"
+else
+    # Install bash-completion if missing
+    if command -v apt-get &> /dev/null; then
+        dpkg -s bash-completion &>/dev/null || (apt-get update -y && apt-get install -y bash-completion) || true
+    fi
+fi
+
+# 1.5. Auto-configure 'docker' group for non-root users & setup completion
+TARGET_USER="${SUDO_USER:-$USER}"
+if [ -n "$TARGET_USER" ] && [ "$TARGET_USER" != "root" ]; then
+    echo "[Info] Configuring 'docker' group permission for user: $TARGET_USER ..."
+    groupadd docker 2>/dev/null || true
+    usermod -aG docker "$TARGET_USER" 2>/dev/null || true
+    echo "✅ User '$TARGET_USER' added to 'docker' group (Take effect on next login)."
 fi
 
 # 2. Ensure Go-native Python-Independent Docker Compose v2 is installed

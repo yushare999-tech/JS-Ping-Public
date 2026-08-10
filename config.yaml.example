@@ -1,0 +1,29 @@
+server:
+  node_id: ""
+  zone: "external"  # Options: internal, external
+  listen_port: 8080
+  ip_address: ""
+
+database:
+  host: ""
+  port: 3306
+  user: ""
+  password: ""
+  dbname: ""
+  charset: utf8mb4
+  max_open_conns: 25
+  max_idle_conns: 5
+  conn_max_lifetime: 5m0s
+
+security:
+  allowed_ips:
+    - 127.0.0.1
+    - ::1
+    - localhost
+    - 10.0.0.0/8
+    - 172.16.0.0/12
+    - 192.168.0.0/16
+
+telegram:
+  bot_token: ""
+  chat_id: ""

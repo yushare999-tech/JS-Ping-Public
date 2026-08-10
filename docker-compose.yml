@@ -6,14 +6,12 @@ services:
       - "8080:8080"
     volumes:
       - ./config.yaml:/app/config.yaml
-    restart: always
-
-  watchtower:
-    image: containrrr/watchtower:latest
-    container_name: js-ping-watchtower
-    volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - .:/host_dir
+      - /etc/machine-id:/etc/machine-id:ro
     environment:
-      - DOCKER_API_VERSION=1.40
-    command: --interval 30 --cleanup js-ping-node
+      - HOST_DIR=/host_dir
+      - HOST_REAL_PATH=${HOST_REAL_PATH}
+      - CONTAINER_NAME=js-ping-node
+      - NODE_ROLE=${NODE_ROLE:-full}
     restart: always

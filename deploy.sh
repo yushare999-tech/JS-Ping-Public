@@ -1,32 +1,123 @@
 #!/bin/bash
 # ==============================================================================
-#   JS-Ping Node Deployment Helper Script
-#   - Check if config.yaml exists to prevent Docker directory-mount issues.
-#   - Generate template config.yaml if missing.
-#   - Run docker compose up -d to pull GHCR image and start containers.
+#   🏓 JS-Ping Official One-Touch Public Deployment Script
+#   GitHub Repository: https://github.com/yushare999-tech/JS-Ping-Public
+#
+#   Usage:
+#     1) Direct Run: ./deploy.sh
+#     2) One-Line Install:
+#        curl -sSL https://raw.githubusercontent.com/yushare999-tech/JS-Ping-Public/main/deploy.sh | bash
 # ==============================================================================
 
+set -e
+
+# Target Repository Raw URL for downloading assets if pipe-executed
+RAW_REPO_URL="https://raw.githubusercontent.com/yushare999-tech/JS-Ping-Public/main"
+
 # Get current script directory
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [ -n "$BASH_SOURCE" ] && [ -f "$BASH_SOURCE" ]; then
+    DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+else
+    DIR="$(pwd)"
+fi
 cd "$DIR"
 
+echo "=========================================================="
+echo "   🏓 JS-Ping Public Cluster Node Deployment Helper"
+echo "   Release: Official Public GHCR Container"
+echo "=========================================================="
+
+# 1. Verify Docker installation & Auto-install Docker if missing (apt/yum/dnf + get.docker.com fallback)
+if ! command -v docker &> /dev/null; then
+    echo "[Info] Docker is not installed on this system."
+    echo "[Info] Starting Native Package Manager Auto-Installation..."
+    
+    # Try native OS package manager first (apt-get / dnf / yum)
+    if command -v apt-get &> /dev/null; then
+        echo "[Info] Detected Ubuntu/Debian system. Installing docker via apt-get..."
+        export DEBIAN_FRONTEND=noninteractive
+        apt-get update -y || true
+        apt-get install -y docker.io docker-compose-plugin docker-buildx-plugin || apt-get install -y docker.io docker-compose || true
+    elif command -v dnf &> /dev/null; then
+        echo "[Info] Detected RHEL/Fedora/Rocky system. Installing docker via dnf..."
+        dnf install -y docker docker-compose-plugin || true
+    elif command -v yum &> /dev/null; then
+        echo "[Info] Detected CentOS/RHEL system. Installing docker via yum..."
+        yum install -y docker docker-compose-plugin || true
+    fi
+
+    # Fallback to official get.docker.com script if native package manager didn't set up docker
+    if ! command -v docker &> /dev/null; then
+        echo "[Info] Fallback: Attempting official get.docker.com script..."
+        if command -v curl &> /dev/null; then
+            curl -fsSL https://get.docker.com | sh || true
+        elif command -v wget &> /dev/null; then
+            wget -qO- https://get.docker.com | sh || true
+        fi
+    fi
+    
+    # Start and enable Docker service daemon
+    systemctl start docker 2>/dev/null || service docker start 2>/dev/null || true
+    systemctl enable docker 2>/dev/null || true
+    
+    if ! command -v docker &> /dev/null; then
+        echo "❌ ERROR: Automatic Docker installation failed."
+        echo "   Please install Docker manually using: apt-get install -y docker.io"
+        exit 1
+    fi
+    echo "✅ Docker installed and service daemon started successfully!"
+fi
+
+# Detect docker compose CLI command
+if docker compose version &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker compose"
+elif command -v docker-compose &> /dev/null; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+else
+    echo "[Info] Docker Compose CLI plugin missing. Installing docker-compose-plugin..."
+    if command -v apt-get &> /dev/null; then
+        apt-get update -y && apt-get install -y docker-compose-plugin docker-compose || true
+    elif command -v yum &> /dev/null; then
+        yum install -y docker-compose-plugin || true
+    fi
+
+    if docker compose version &> /dev/null; then
+        DOCKER_COMPOSE_CMD="docker compose"
+    elif command -v docker-compose &> /dev/null; then
+        DOCKER_COMPOSE_CMD="docker-compose"
+    else
+        echo "❌ ERROR: Could not find or install docker compose CLI."
+        echo "   Please run: apt-get install -y docker-compose-plugin"
+        exit 1
+    fi
+fi
+
+# 2. Check and fetch docker-compose.yml if missing (e.g. running via curl pipe)
+if [ ! -f "docker-compose.yml" ]; then
+    echo "[Info] docker-compose.yml not found in current directory. Fetching from public repository..."
+    if command -v curl &> /dev/null; then
+        curl -sSL "$RAW_REPO_URL/docker-compose.yml" -o docker-compose.yml
+    elif command -v wget &> /dev/null; then
+        wget -q "$RAW_REPO_URL/docker-compose.yml" -o docker-compose.yml
+    else
+        echo "❌ ERROR: Neither curl nor wget found to download docker-compose.yml!"
+        exit 1
+    fi
+    echo "✅ Downloaded docker-compose.yml successfully."
+fi
+
+# 3. Check if config.yaml exists. Generate default template if missing to prevent Docker directory-mount bug
 CONFIG_FILE="config.yaml"
 CONFIG_EXISTS=true
 
-echo "=========================================================="
-echo "   JS-Ping Cluster Node Deployment Helper"
-echo "=========================================================="
-
-# 1. Check if config.yaml exists
 if [ ! -f "$CONFIG_FILE" ]; then
     CONFIG_EXISTS=false
-    echo "[Info] config.yaml not found. Generating default blank template..."
+    echo "[Info] config.yaml not found. Generating clean default template..."
     
-    # Write default config content into config.yaml to prevent Docker from creating a directory
     cat << 'EOF' > "$CONFIG_FILE"
 server:
   node_id: ""
-  zone: external
+  zone: "external"  # Options: internal, external
   listen_port: 8080
   ip_address: ""
 
@@ -59,22 +150,37 @@ else
     echo "✅ Found existing $CONFIG_FILE."
 fi
 
-# 2. Run docker compose up -d to start the containers
-echo "[Info] Launching JS-Ping Docker Containers..."
-docker compose up -d
+# 4. Write host real path to .env file for volume mapping
+ENV_FILE=".env"
+echo "HOST_REAL_PATH=$DIR" > "$ENV_FILE"
+echo "✅ Set HOST_REAL_PATH=$DIR in $ENV_FILE"
+
+# 5. Pull latest container image and start service
+echo "[Info] Pulling latest JS-Ping public release image..."
+$DOCKER_COMPOSE_CMD pull || true
+
+echo "[Info] Launching JS-Ping Docker Container..."
+$DOCKER_COMPOSE_CMD up -d --remove-orphans
+
 if [ $? -ne 0 ]; then
-    echo "❌ ERROR: Failed to run docker compose!"
+    echo "❌ ERROR: Failed to start JS-Ping docker container!"
     exit 1
 fi
 
-# 3. Print deployment guides
+# 6. Detect Host IP Address for display
+HOST_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
+if [ -z "$HOST_IP" ]; then
+    HOST_IP="<Server-IP>"
+fi
+
 echo "=========================================================="
 echo "🎉 SUCCESS: JS-Ping Cluster Node is now running!"
-echo "   Dashboard Web Address: http://localhost:8080"
+echo "   📌 Dashboard Web Address: http://${HOST_IP}:8080"
 echo "=========================================================="
 if [ "$CONFIG_EXISTS" = false ]; then
-    echo "[안내] 데이터베이스가 아직 비어있으므로,"
-    echo "       대시보드 최초 접속 시 'MySQL 설정 마법사'로 이동합니다."
-    echo "       화면 지침에 따라 데이터베이스 연결을 완성해 주세요."
+    echo "[안내] 데이터베이스 설정이 초기화 상태입니다."
+    echo "       브라우저로 http://${HOST_IP}:8080 접속 시"
+    echo "       'MySQL 웹 설정 마법사'가 자동으로 구동됩니다."
+    echo "       화면의 지침에 따라 DB 연결을 완성해 주세요."
     echo "=========================================================="
 fi

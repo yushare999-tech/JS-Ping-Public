@@ -1,45 +1,60 @@
-# JS-Ping Closed-Source Release Node
+# 🏓 JS-Ping Official Public Release Node
 
-본 패키지는 **JS-Ping Active-Active 클러스터 모니터링 엔진**의 배포 및 가동을 위한 독립 구동 환경입니다. 
-본 패키지에는 Go 소스코드가 포함되어 있지 않으며, 검증된 도커 이미지(`ghcr.io`)를 원격 다운로드받아 안전하게 캡슐화 실행합니다.
-
----
-
-## 🔄 실시간 무중단 자동 업데이트 (Auto-Upgrade)
-- 본 패키지에는 **Watchtower** 모듈이 내장되어 있습니다.
-- 개발사에서 새로운 릴리즈 이미지(`latest`)를 깃허브 레지스트리에 푸시하면, 일반 노드가 이를 **30초 내로 감지하여 서비스 중단 없이 5초 만에 자동으로 컨테이너를 새 버전으로 교체 구동**합니다. 
-- 사용자는 아무런 업데이트 쉘 명령을 직접 내릴 필요가 없습니다.
+본 패키지는 **JS-Ping Active-Active 클러스터 분산 모니터링 엔진**의 원터치 배포 및 가동을 위한 퍼블릭 전용 구동 패키지입니다. 
+GitHub Container Registry(`ghcr.io/yushare999-tech/js-ping-node:latest`)의 최신 검증 릴리즈 이미지를 활용하여 안전하고 원터치로 캡슐화 실행됩니다.
 
 ---
 
-## 🚀 3초 간편 설치 및 실행 가이드
+## ⚡ 1초 원터치 빠른 설치 (One-Line Quick Install)
 
-### 1단계: 패키지 파일 내려받기
-배포용 저장소를 복제합니다.
+터미널에서 아래 한 줄 명령어를 입력하면 자동으로 최신 이미지 수신부터 `config.yaml` 템플릿 세팅 및 컨테이너 구동까지 원스톱으로 진행됩니다.
+
+```bash
+curl -sSL https://raw.githubusercontent.com/yushare999-tech/JS-Ping-Public/main/deploy.sh | bash
+```
+
+---
+
+## 🚀 수동 Git Clone 설치 및 실행 가이드
+
+### 1단계: 패키지 내려받기
 ```bash
 git clone https://github.com/yushare999-tech/JS-Ping-Public.git js-ping
 cd js-ping
 ```
 
 ### 2단계: 배포 스크립트 실행
-동봉된 배포 스크립트(`deploy.sh`)를 실행합니다.
 ```bash
 ./deploy.sh
 ```
-- **자동 검증 및 보정**: 스크립트가 실행 과정에서 `config.yaml` 파일의 누락 여부를 판단하여, 파일이 없을 경우 도커 디렉토리 생성 버그 예방을 위해 **기본 공백 뼈대 템플릿을 자동 생성**해 준 뒤 `docker compose up -d`를 안전하게 대행합니다.
+- **자동 검증 및 보정**: 스크립트 실행 시 `config.yaml` 파일 부재에 따른 도커 마운트 디렉토리 생성 버그를 원천 차단하기 위해 기본 안전 템플릿을 자동 생성한 후 컨테이너를 구동합니다.
 
-### 3단계: 초기 웹 설정 진행
-브라우저를 열고 대시보드 화면에 접속합니다.
+### 3단계: 웹 마법사 초기 설정
+브라우저를 열고 접속합니다.
 - **주소**: `http://<서버IP>:8080`
-- DB 설정 정보가 비어있으므로 접속 시 자동으로 **데이터베이스 설정 마법사**가 나타납니다.
-- MySQL DB 연결 주소, 계정명, 비밀번호를 입력하고 `저장`을 클릭하면 즉시 테이블 자동 생성 및 서비스 등록이 완료됩니다.
+- DB 설정 정보가 비어있는 상태에서 접속 시 **웹 설정 마법사**가 자동으로 표시됩니다. MySQL 접속 정보를 입력하면 테이블 생성 및 노드 등록이 원스톱 처리됩니다.
 
 ---
 
-## 🛠️ 관리자 헬퍼 명령
+## 🏛️ 노드 역할(NODE_ROLE) 및 Zone 설정
 
-### 노드 모니터링 락 리셋
-노드가 비정상 종료되어 target 임대 권한이 묶였을 경우, 락 강제 해제:
+`config.yaml` 파일에서 노드의 역할과 망(Zone) 구분을 손쉽게 설정할 수 있습니다.
+
+```yaml
+server:
+  node_id: ""
+  zone: "external"    # Options: internal, external
+  listen_port: 8080
+```
+
+* **`full` / `worker` / `master`**: PING 측정 수집 및 Auto-Rebalancing(자동 균등 분할) 참여
+* **`monitor`**: PING 수집 부하 0% 상태로 오직 웹 대시보드 및 API 서빙만 전담
+
+---
+
+## 🛠️ 클러스터 임대 초기화 도구
+
+노드가 비정상 종료되거나 점유 락을 리셋하려는 경우:
 ```bash
 ./scripts/reset_cluster_nodes.sh
 ```

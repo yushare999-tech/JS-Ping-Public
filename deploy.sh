@@ -3,10 +3,9 @@
 #   🏓 JS-Ping Official One-Touch Public Deployment Script
 #   GitHub Repository: https://github.com/yushare999-tech/JS-Ping-Public
 #
-#   Usage:
-#     1) Direct Run: ./deploy.sh
-#     2) One-Line Install:
-#        curl -sSL https://raw.githubusercontent.com/yushare999-tech/JS-Ping-Public/main/deploy.sh | bash
+#   Features:
+#     - 100% Python-Independent (Go-native Docker Compose v2)
+#     - Auto-installs Docker & Docker Compose v2 standalone binary on Minimal OS
 # ==============================================================================
 
 set -e
@@ -24,26 +23,26 @@ cd "$DIR"
 
 echo "=========================================================="
 echo "   🏓 JS-Ping Public Cluster Node Deployment Helper"
-echo "   Release: Official Public GHCR Container"
+echo "   Release: Official Public GHCR Container (Python 0%)"
 echo "=========================================================="
 
-# 1. Verify Docker installation & Auto-install Docker if missing (apt/yum/dnf + get.docker.com fallback)
+# 1. Verify Docker installation & Auto-install Docker if missing on Minimal OS
 if ! command -v docker &> /dev/null; then
-    echo "[Info] Docker is not installed on this system."
+    echo "[Info] Docker is not installed on this Minimal OS."
     echo "[Info] Starting Native Package Manager Auto-Installation..."
     
     # Try native OS package manager first (apt-get / dnf / yum)
     if command -v apt-get &> /dev/null; then
-        echo "[Info] Detected Ubuntu/Debian system. Installing docker via apt-get..."
+        echo "[Info] Detected Ubuntu/Debian system. Installing docker.io via apt-get..."
         export DEBIAN_FRONTEND=noninteractive
         apt-get update -y || true
-        apt-get install -y docker.io docker-compose-plugin docker-buildx-plugin || apt-get install -y docker.io docker-compose || true
+        apt-get install -y docker.io || true
     elif command -v dnf &> /dev/null; then
         echo "[Info] Detected RHEL/Fedora/Rocky system. Installing docker via dnf..."
-        dnf install -y docker docker-compose-plugin || true
+        dnf install -y docker || true
     elif command -v yum &> /dev/null; then
         echo "[Info] Detected CentOS/RHEL system. Installing docker via yum..."
-        yum install -y docker docker-compose-plugin || true
+        yum install -y docker || true
     fi
 
     # Fallback to official get.docker.com script if native package manager didn't set up docker
@@ -68,31 +67,60 @@ if ! command -v docker &> /dev/null; then
     echo "✅ Docker installed and service daemon started successfully!"
 fi
 
-# Detect docker compose CLI command
+# 2. Ensure Go-native Python-Independent Docker Compose v2 is installed
+DOCKER_COMPOSE_CMD=""
+
 if docker compose version &> /dev/null; then
     DOCKER_COMPOSE_CMD="docker compose"
-elif command -v docker-compose &> /dev/null; then
-    DOCKER_COMPOSE_CMD="docker-compose"
-else
-    echo "[Info] Docker Compose CLI plugin missing. Installing docker-compose-plugin..."
-    if command -v apt-get &> /dev/null; then
-        apt-get update -y && apt-get install -y docker-compose-plugin docker-compose || true
-    elif command -v yum &> /dev/null; then
-        yum install -y docker-compose-plugin || true
+fi
+
+# If docker compose CLI plugin is missing or legacy Python v1 is found, install Go-native standalone Compose v2
+if [ -z "$DOCKER_COMPOSE_CMD" ]; then
+    echo "[Info] Installing Python-Independent Go-Native Docker Compose v2 Plugin..."
+    
+    ARCH=$(uname -m)
+    case "$ARCH" in
+        x86_64)  COMPOSE_ARCH="x86_64" ;;
+        aarch64|arm64) COMPOSE_ARCH="aarch64" ;;
+        *) COMPOSE_ARCH="x86_64" ;;
+    esac
+
+    # Destination directory for Docker CLI plugin
+    PLUGIN_DIR="/usr/libexec/docker/cli-plugins"
+    mkdir -p "$PLUGIN_DIR"
+    mkdir -p "/usr/local/bin"
+
+    COMPOSE_URL="https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-${COMPOSE_ARCH}"
+    
+    echo "[Info] Downloading Go-native binary from Github Releases ($COMPOSE_ARCH)..."
+    if command -v curl &> /dev/null; then
+        curl -sSL "$COMPOSE_URL" -o "$PLUGIN_DIR/docker-compose" || true
+    elif command -v wget &> /dev/null; then
+        wget -q "$COMPOSE_URL" -O "$PLUGIN_DIR/docker-compose" || true
+    fi
+
+    if [ -f "$PLUGIN_DIR/docker-compose" ]; then
+        chmod +x "$PLUGIN_DIR/docker-compose"
+        cp -f "$PLUGIN_DIR/docker-compose" "/usr/local/bin/docker-compose" 2>/dev/null || true
+        chmod +x "/usr/local/bin/docker-compose" 2>/dev/null || true
     fi
 
     if docker compose version &> /dev/null; then
         DOCKER_COMPOSE_CMD="docker compose"
     elif command -v docker-compose &> /dev/null; then
         DOCKER_COMPOSE_CMD="docker-compose"
-    else
-        echo "❌ ERROR: Could not find or install docker compose CLI."
-        echo "   Please run: apt-get install -y docker-compose-plugin"
-        exit 1
     fi
 fi
 
-# 2. Check and fetch docker-compose.yml if missing (e.g. running via curl pipe)
+if [ -z "$DOCKER_COMPOSE_CMD" ]; then
+    echo "❌ ERROR: Failed to setup Go-native Docker Compose v2."
+    echo "   Please run: apt-get install -y docker-compose-plugin"
+    exit 1
+fi
+
+echo "✅ Using Go-Native Docker Compose: $($DOCKER_COMPOSE_CMD version)"
+
+# 3. Check and fetch docker-compose.yml if missing (e.g. running via curl pipe)
 if [ ! -f "docker-compose.yml" ]; then
     echo "[Info] docker-compose.yml not found in current directory. Fetching from public repository..."
     if command -v curl &> /dev/null; then
@@ -106,7 +134,7 @@ if [ ! -f "docker-compose.yml" ]; then
     echo "✅ Downloaded docker-compose.yml successfully."
 fi
 
-# 3. Check if config.yaml exists. Generate default template if missing to prevent Docker directory-mount bug
+# 4. Check if config.yaml exists. Generate default template if missing to prevent Docker directory-mount bug
 CONFIG_FILE="config.yaml"
 CONFIG_EXISTS=true
 
@@ -150,12 +178,12 @@ else
     echo "✅ Found existing $CONFIG_FILE."
 fi
 
-# 4. Write host real path to .env file for volume mapping
+# 5. Write host real path to .env file for volume mapping
 ENV_FILE=".env"
 echo "HOST_REAL_PATH=$DIR" > "$ENV_FILE"
 echo "✅ Set HOST_REAL_PATH=$DIR in $ENV_FILE"
 
-# 5. Pull latest container image and start service
+# 6. Pull latest container image and start service
 echo "[Info] Pulling latest JS-Ping public release image..."
 $DOCKER_COMPOSE_CMD pull || true
 
@@ -167,7 +195,7 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# 6. Detect Host IP Address for display
+# 7. Detect Host IP Address for display
 HOST_IP=$(hostname -I 2>/dev/null | awk '{print $1}')
 if [ -z "$HOST_IP" ]; then
     HOST_IP="<Server-IP>"

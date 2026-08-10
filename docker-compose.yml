@@ -2,8 +2,7 @@ services:
   js-ping-node:
     image: ghcr.io/yushare999-tech/js-ping-node:latest
     container_name: js-ping-node
-    ports:
-      - "8080:8080"
+    network_mode: "host"
     volumes:
       - ./config.yaml:/app/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
@@ -13,5 +12,4 @@ services:
       - HOST_DIR=/host_dir
       - HOST_REAL_PATH=${HOST_REAL_PATH}
       - CONTAINER_NAME=js-ping-node
-      - NODE_ROLE=${NODE_ROLE:-full}
     restart: always

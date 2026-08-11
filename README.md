@@ -9,7 +9,7 @@ JS-Ping 프로젝트 저장소입니다.
 ```text
 JS-Ping/
 ├── .gitignore          # Git 제외 대상 설정
-├── .version            # SemVer 프로젝트 버전 파일 (현재: 4.18.1)
+├── .version            # SemVer 프로젝트 버전 파일 (현재: 4.20.1)
 ├── git_sync.sh         # [전역 필수] 형상 관리 & 버저닝 자동화 유틸리티
 ├── publish_ghcr.sh     # 🐳 GHCR 공개 Docker 이미지 게시 유틸리티 (0.X.0)
 ├── publish_public_repo.sh # 🌐 공개 저장소(JS-Ping-Public) 템플릿 원터치 싱크 유틸리티

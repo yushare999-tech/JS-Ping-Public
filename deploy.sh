@@ -210,7 +210,7 @@ echo "[Info] Pulling latest JS-Ping public release image..."
 $DOCKER_COMPOSE_CMD pull || true
 
 # Remove conflicting existing container if any
-docker rm -f js-ping-node 2>/dev/null || true
+sudo docker rm -f js-ping-node 2>/dev/null || docker rm -f js-ping-node 2>/dev/null || true
 
 echo "[Info] Launching JS-Ping Docker Container..."
 $DOCKER_COMPOSE_CMD up -d --remove-orphans

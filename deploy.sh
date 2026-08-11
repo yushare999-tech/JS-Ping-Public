@@ -166,7 +166,7 @@ if [ ! -f "$CONFIG_FILE" ]; then
 
     cat << EOF > "$CONFIG_FILE"
 server:
-  node_id: ""
+  node_id: "Node-${DETECTED_IP:-'Default'}"
   zone: "external"  # Options: internal, external
   listen_port: 8080
   ip_address: "${DETECTED_IP}"

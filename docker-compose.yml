@@ -4,9 +4,9 @@ services:
     container_name: js-ping-node
     network_mode: "host"
     volumes:
-      - ./config.yaml:/app/config.yaml
+      - ${HOST_REAL_PATH:-.}/config.yaml:/app/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
-      - .:/host_dir
+      - ${HOST_REAL_PATH:-.}:/host_dir
       - /etc/machine-id:/etc/machine-id:ro
     environment:
       - HOST_DIR=/host_dir

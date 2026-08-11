@@ -150,20 +150,26 @@ if [ ! -f "docker-compose.yml" ]; then
     echo "✅ Downloaded docker-compose.yml successfully."
 fi
 
-# 4. Check if config.yaml exists. Generate default template if missing to prevent Docker directory-mount bug
+# 4. Check if config.yaml exists. Generate default template if missing with auto-detected private IP
 CONFIG_FILE="config.yaml"
 CONFIG_EXISTS=true
 
 if [ ! -f "$CONFIG_FILE" ]; then
     CONFIG_EXISTS=false
-    echo "[Info] config.yaml not found. Generating clean default template..."
+    echo "[Info] config.yaml not found. Detecting physical private NIC IP..."
     
-    cat << 'EOF' > "$CONFIG_FILE"
+    DETECTED_IP=$(ip -4 addr show 2>/dev/null | grep -vE '127\.0\.0\.1|docker|tailscale|veth|br-|cni|flannel|tun|ppp' | grep -oE 'inet (10\.[0-9]+\.[0-9]+\.[0-9]+|192\.168\.[0-9]+\.[0-9]+|172\.(1[6-9]|2[0-9]|3[01])\.[0-9]+\.[0-9]+)' | awk '{print $2}' | head -n 1 || true)
+    if [ -z "$DETECTED_IP" ]; then
+        DETECTED_IP=$(hostname -I 2>/dev/null | awk '{print $1}' || true)
+    fi
+    echo "[Info] Auto-detected Private IP: ${DETECTED_IP:-'None'}"
+
+    cat << EOF > "$CONFIG_FILE"
 server:
   node_id: ""
   zone: "external"  # Options: internal, external
   listen_port: 8080
-  ip_address: ""
+  ip_address: "${DETECTED_IP}"
 
 database:
   host: ""
@@ -189,7 +195,7 @@ telegram:
   bot_token: ""
   chat_id: ""
 EOF
-    echo "✅ Generated $CONFIG_FILE successfully."
+    echo "✅ Generated $CONFIG_FILE with ip_address: '${DETECTED_IP}' successfully."
 else
     echo "✅ Found existing $CONFIG_FILE."
 fi

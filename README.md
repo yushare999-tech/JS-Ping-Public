@@ -1,71 +1,93 @@
-# 🏓 JS-Ping Official Public Release Node
+# 🏓 JS-Ping
 
-본 패키지는 **JS-Ping Active-Active 클러스터 분산 모니터링 엔진**의 원터치 배포 및 가동을 위한 퍼블릭 전용 구동 패키지입니다. 
-GitHub Container Registry(`ghcr.io/yushare999-tech/js-ping-node:latest`)의 최신 검증 릴리즈 이미지를 활용하여 안전하고 원터치로 캡슐화 실행됩니다.
-
----
-
-## ⚡ 1초 원터치 빠른 설치 (One-Line Quick Install)
-
-터미널에서 아래 한 줄 명령어를 입력하면 자동으로 최신 이미지 수신부터 `config.yaml` 템플릿 세팅 및 컨테이너 구동까지 원스톱으로 진행됩니다.
-
-```bash
-curl -sSL https://raw.githubusercontent.com/yushare999-tech/JS-Ping-Public/main/deploy.sh | bash
-```
-
-### 🧹 원터치 한방 초기화 / 삭제 (One-Touch Reset)
-노드를 완전 초기화하거나 재설치하려는 경우 아래 명령어를 실행합니다:
-
-```bash
-curl -sSL https://raw.githubusercontent.com/yushare999-tech/JS-Ping-Public/main/reset.sh | bash
-```
+JS-Ping 프로젝트 저장소입니다.
 
 ---
 
-## 🚀 수동 Git Clone 설치 및 실행 가이드
+## 📂 프로젝트 디렉토리 트리 구조 (Directory Structure)
 
-### 1단계: 패키지 내려받기
-```bash
-git clone https://github.com/yushare999-tech/JS-Ping-Public.git js-ping
-cd js-ping
+```text
+JS-Ping/
+├── .gitignore          # Git 제외 대상 설정
+├── .version            # SemVer 프로젝트 버전 파일 (현재: 4.18.1)
+├── git_sync.sh         # [전역 필수] 형상 관리 & 버저닝 자동화 유틸리티
+├── publish_ghcr.sh     # 🐳 GHCR 공개 Docker 이미지 게시 유틸리티 (0.X.0)
+├── publish_public_repo.sh # 🌐 공개 저장소(JS-Ping-Public) 템플릿 원터치 싱크 유틸리티
+├── HISTORY.md          # 최상위 변경 이력 및 문서 네비게이션
+├── README.md           # 프로젝트 개요 및 디렉토리 구조
+├── Dockerfile          # Multi-stage Docker 이미지 빌드 템플릿
+├── Dev/                # 🛠️ [개발 전용 팩] 로컬 소스 수정 후 빠른 재빌드/도커 테스트 전용 디렉토리
+│   ├── build_dev.sh        # 로컬 Go 바이너리(build/ping-engine, build/migrator) 3초 전용 재빌드 스크립트
+│   ├── run_dev.sh          # 로컬 개발용 백그라운드 엔진 가동 스크립트
+│   ├── stop_dev.sh         # 로컬 개발 백그라운드 엔진 안전 중지 스크립트
+│   ├── config_dev.yaml     # 로컬 개발 전용 DB & 서버 설정 파일
+│   └── README.md           # Dev 개발 패키지 안내서
+├── Master/             # 👑 [마스터 노드 팩] 163 마스터 전용 도커 실행 패키지
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── docker_deploy.sh
+│   └── config.yaml
+├── deploy/             # 🚀 [순수 실무 배포 팩] 공개 레포지토리 싱크 전용 청정 배포 패키지 디렉토리
+│   ├── Dockerfile          # Multi-stage 생산 배포용 Dockerfile
+│   ├── docker-compose.yml   # 범용 순수 배포용 Docker Compose 템플릿
+│   ├── config.yaml.example # DB & 노드 설정 템플릿
+│   ├── docker_deploy.sh    # 원클릭 배포 및 자동 구동 스크립트
+│   └── README.md           # 배포 팩 설명서
+├── web/                # 웹 대시보드 UI (Setup 마법사, 모니터링, RTT 히스토리/부하분석, ACL)
+│   ├── index.html          # Setup 마법사, 대시보드, PING 히스토리 로그 뷰어 모달 & RTT 분석 탭 HTML
+│   ├── style.css           # 프리미엄 글래스모피즘 디자인 시스템
+│   └── app.js              # REST API 연동, Pure JS Canvas RTT 차트 렌더러 & 대시보드 스크립트
+├── cmd/
+│   ├── migrator/           # DB 마이그레이터 엔트리포인트 (main.go)
+│   ├── ping-engine/        # 메인 모니터링 엔진 엔트리포인트 (main.go)
+│   └── tools/              # 🛠️ 유틸리티 도구 (update-telegram-menu)
+├── internal/
+│   ├── alert/              # 텔레그램 다중 알림 그룹 브로드캐스팅 & 슬래시 명령어 처리 엔진
+│   ├── api/                # Gin REST API Gateway (analytics.go, handler.go, Hybrid Auth)
+│   ├── checker/            # ICMP, HTTP, HTTPS, TCP 수집기 & Worker Pool
+│   ├── cluster/            # Node Heartbeat & Optimistic Locking Leasing 엔진
+│   ├── config/             # YAML 설정 파서 및 NODE_ROLE 환경변수 파서
+│   └── database/           # MySQL DB 접속 커넥션 및 DDL 엔진 (jsping_ 7개 테이블)
+├── scripts/
+│   ├── telegram_commands.json  # 🤖 텔레그램 슬래시 명령어 외부 JSON 설정 파일
+│   ├── update_telegram_menu.sh # 🛠️ 텔레그램 슬래시 메뉴 및 버튼 수동 등록 CLI 도구
+│   ├── update_telegram_menu    # 텔레그램 메뉴 수동 등록 실행 바이너리
+│   ├── reset_cluster_nodes.sh  # 클러스터 노드 & 임대(Lease) DB 초기화 셸 스크립트
+│   └── reset_cluster_nodes.sql # 클러스터 노드 DB 초기화 SQL 쿼리 파일
+└── docs/               # 상세 기술 및 설계 문서 디렉토리
+    ├── v5.0/               # 🚀 [v5.0 개발 계획 전용 디렉토리]
+    │   ├── V5_ROLE_BASED_ARCHITECTURE_AND_HISTORY_VIEWER.md # 🏛️ 역할 기반 아키텍처 & PING 히스토리 뷰어 상세 설계서
+    │   ├── MILESTONE_PROGRESS_REPORT.md                     # 🚩 마일스톤 경과 & v5.0 차기 개발 로드맵 보고서
+    │   └── DEVELOPMENT_PLAN.md                              # 📐 v5.0 코어 개발 계획서
+    ├── AUTO_REBALANCING_DEVELOPMENT_PLAN.md # 📐 [자동 균등 재분배] 노드 Scale-Out PING 대상 Auto-Rebalancing 기술 개발 계획서
+    ├── TELEGRAM_BOT_INTEGRATION_SUMMARY.md # [총괄 문서] 텔레그램 봇 양방향 상호작용 통합 요약서
+    ├── DOCKER_OPERATIONS_GUIDE.md # [운영 가이드] 도커 생명주기, 자동 재시작 메커니즘 & 실무 명령어 매뉴얼
+    ├── MANUAL_TEST_GUIDE_162_165.md # [매뉴얼] 162~165 노드 초기 구축/업그레이드/롤백/차단 테스트 매뉴얼
+    └── DOCKER_DEPLOY_GUIDE.md # [공식 배포] Docker 원클릭 설치 & 실무 릴리즈 가이드
 ```
-
-### 2단계: 배포 스크립트 실행
-```bash
-./deploy.sh
-```
-- **자동 검증 및 보정**: 스크립트 실행 시 `config.yaml` 파일 부재에 따른 도커 마운트 디렉토리 생성 버그를 원천 차단하기 위해 기본 안전 템플릿을 자동 생성한 후 컨테이너를 구동합니다.
-
-### 3단계: 웹 마법사 초기 설정
-브라우저를 열고 접속합니다.
-- **주소**: `http://<서버IP>:8080`
-- DB 설정 정보가 비어있는 상태에서 접속 시 **웹 설정 마법사**가 자동으로 표시됩니다. MySQL 접속 정보를 입력하면 테이블 생성 및 노드 등록이 원스톱 처리됩니다.
 
 ---
 
-## 🏛️ 네트워크 모드 및 노드 설정 (Host Network Mode)
+## 🛠️ 개발 및 빌드 가이드 (Quick Start)
 
-본 배포 패키지는 **`network_mode: "host"` 표준 규격**을 채택하고 있습니다.
-* **실제 사설/공인 IP 100% 보존**: 도커 가상 IP(`172.18.0.x`) 변환(SNAT) 없이 서버의 실제 사설 IP(`10.96.x.x`, `192.168.0.x`)가 그대로 보존되어 마스터 및 다른 노드에 인식됩니다.
-* **PING 측정 속도 정밀화**: 도커 브릿지 나트 레이어를 우회하여 0.1ms 단위의 쾌속 핑 RTT 측정이 가능합니다.
+### 로컬 개발 및 빠른 빌드 (`Dev/`)
+```bash
+# 1. 소스 수정 후 3초 로컬 빌드
+./Dev/build_dev.sh
 
-`config.yaml` 파일에서 노드의 망(Zone) 구분을 손쉽게 설정할 수 있습니다:
+# 2. 로컬 개발 엔진 가동
+./Dev/run_dev.sh
 
-```yaml
-server:
-  node_id: ""
-  zone: "external"    # Options: internal, external
-  listen_port: 8080
+# 3. 로컬 개발 엔진 중지
+./Dev/stop_dev.sh
 ```
-
-* **`full` / `worker` / `master`**: PING 측정 수집 및 Auto-Rebalancing(자동 균등 분할) 참여
-* **`monitor`**: PING 수집 부하 0% 상태로 오직 웹 대시보드 및 API 서빙만 전담
 
 ---
 
-## 🛠️ 클러스터 임대 초기화 도구
+## 🛠️ 개발 및 동기화 가이드
 
-노드가 비정상 종료되거나 점유 락을 리셋하려는 경우:
+### 형상 동기화 (Git Sync)
+프로젝트 변경사항을 커밋하고 동기화할 때 표준 유틸리티를 사용합니다:
 ```bash
-./scripts/reset_cluster_nodes.sh
+./git_sync.sh "커밋 메시지"
 ```

@@ -202,7 +202,12 @@ fi
 
 # 5. Write host real path & PING_VERSION to .env file for volume mapping
 ENV_FILE=".env"
-TARGET_VERSION="${PING_VERSION:-${1:-latest}}"
+RAW_TARGET="${PING_VERSION:-${1:-latest}}"
+if [ "$RAW_TARGET" != "latest" ]; then
+    TARGET_VERSION=$(echo "$RAW_TARGET" | sed 's/^v//')
+else
+    TARGET_VERSION="latest"
+fi
 cat <<EOF > "$ENV_FILE"
 HOST_REAL_PATH=$DIR
 PING_VERSION=$TARGET_VERSION

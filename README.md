@@ -13,6 +13,13 @@ GitHub Container Registry(`ghcr.io/yushare999-tech/js-ping-node:latest`)의 최�
 curl -sSL https://raw.githubusercontent.com/yushare999-tech/JS-Ping-Public/main/deploy.sh | bash
 ```
 
+### 🧹 원터치 한방 초기화 / 삭제 (One-Touch Reset)
+노드를 완전 초기화하거나 재설치하려는 경우 아래 명령어를 실행합니다:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/yushare999-tech/JS-Ping-Public/main/reset.sh | bash
+```
+
 ---
 
 ## 🚀 수동 Git Clone 설치 및 실행 가이드

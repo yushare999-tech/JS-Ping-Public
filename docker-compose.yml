@@ -1,6 +1,6 @@
 services:
   js-ping-node:
-    image: ghcr.io/yushare999-tech/js-ping-node:latest
+    image: ghcr.io/yushare999-tech/js-ping-node:${PING_VERSION:-latest}
     container_name: js-ping-node
     network_mode: "host"
     volumes:

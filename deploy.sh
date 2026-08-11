@@ -200,13 +200,17 @@ else
     echo "✅ Found existing $CONFIG_FILE."
 fi
 
-# 5. Write host real path to .env file for volume mapping
+# 5. Write host real path & PING_VERSION to .env file for volume mapping
 ENV_FILE=".env"
-echo "HOST_REAL_PATH=$DIR" > "$ENV_FILE"
-echo "✅ Set HOST_REAL_PATH=$DIR in $ENV_FILE"
+TARGET_VERSION="${PING_VERSION:-${1:-latest}}"
+cat <<EOF > "$ENV_FILE"
+HOST_REAL_PATH=$DIR
+PING_VERSION=$TARGET_VERSION
+EOF
+echo "✅ Set HOST_REAL_PATH=$DIR and PING_VERSION=$TARGET_VERSION in $ENV_FILE"
 
-# 6. Pull latest container image and start service
-echo "[Info] Pulling latest JS-Ping public release image..."
+# 6. Pull specified container image and start service
+echo "[Info] Pulling JS-Ping release image (Version: ${TARGET_VERSION})..."
 $DOCKER_COMPOSE_CMD pull || true
 
 # Remove conflicting existing container if any

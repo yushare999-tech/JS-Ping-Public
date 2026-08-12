@@ -138,6 +138,9 @@ if [ -z "$DOCKER_COMPOSE_CMD" ]; then
     exit 1
 fi
 
+# Explicitly assign project name flag to ensure compose project name is never empty even under sudo/root
+DOCKER_COMPOSE_CMD="$DOCKER_COMPOSE_CMD -p js-ping"
+
 # Auto-fallback to sudo if current user cannot access docker.sock (e.g. freshly added to docker group before relogin)
 if ! docker ps &>/dev/null; then
     if command -v sudo &>/dev/null; then

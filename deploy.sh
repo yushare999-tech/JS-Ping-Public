@@ -21,6 +21,9 @@ if [ -n "$BASH_SOURCE" ] && [ -f "$BASH_SOURCE" ]; then
 else
     DIR="$(pwd)"
 fi
+if [ "$DIR" = "/" ] && [ -d "/home/kuri" ]; then
+    DIR="/home/kuri"
+fi
 cd "$DIR"
 
 echo "=========================================================="

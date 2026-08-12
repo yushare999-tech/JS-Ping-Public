@@ -134,6 +134,13 @@ if [ -z "$DOCKER_COMPOSE_CMD" ]; then
     exit 1
 fi
 
+# Auto-fallback to sudo if current user cannot access docker.sock (e.g. freshly added to docker group before relogin)
+if ! docker ps &>/dev/null; then
+    if command -v sudo &>/dev/null; then
+        DOCKER_COMPOSE_CMD="sudo $DOCKER_COMPOSE_CMD"
+    fi
+fi
+
 echo "✅ Using Go-Native Docker Compose: $($DOCKER_COMPOSE_CMD version)"
 
 # 3. Check and fetch docker-compose.yml if missing (e.g. running via curl pipe)

@@ -9,7 +9,7 @@ JS-Ping 프로젝트 저장소입니다.
 ```text
 JS-Ping/
 ├── .gitignore          # Git 제외 대상 설정
-├── .version            # SemVer 프로젝트 버전 파일 (현재: 4.20.1)
+├── .version            # SemVer 프로젝트 버전 파일 (현재: 4.35.4)
 ├── git_sync.sh         # [전역 필수] 형상 관리 & 버저닝 자동화 유틸리티
 ├── publish_ghcr.sh     # 🐳 GHCR 공개 Docker 이미지 게시 유틸리티 (0.X.0)
 ├── publish_public_repo.sh # 🌐 공개 저장소(JS-Ping-Public) 템플릿 원터치 싱크 유틸리티
@@ -44,11 +44,14 @@ JS-Ping/
 ├── internal/
 │   ├── alert/              # 텔레그램 다중 알림 그룹 브로드캐스팅 & 슬래시 명령어 처리 엔진
 │   ├── api/                # Gin REST API Gateway (analytics.go, handler.go, Hybrid Auth)
+│   ├── asset/              # 🏛️ MariaDB 로컬 백업 DB 자산 캐시(Auto-Sync & Failover) 엔진
 │   ├── checker/            # ICMP, HTTP, HTTPS, TCP 수집기 & Worker Pool
 │   ├── cluster/            # Node Heartbeat & Optimistic Locking Leasing 엔진
 │   ├── config/             # YAML 설정 파서 및 NODE_ROLE 환경변수 파서
 │   └── database/           # MySQL DB 접속 커넥션 및 DDL 엔진 (jsping_ 7개 테이블)
 ├── scripts/
+│   ├── template/
+│   │   └── firstboot_ip_patternizer.sh # 💿 ESXi VM 부팅 1회 실행 VLAN IP 패턴화(`js-ping-v<vlan>-<host>`) 및 Nginx 동적 키 수신 자동화 스크립트
 │   ├── telegram_commands.json  # 🤖 텔레그램 슬래시 명령어 외부 JSON 설정 파일
 │   ├── update_telegram_menu.sh # 🛠️ 텔레그램 슬래시 메뉴 및 버튼 수동 등록 CLI 도구
 │   ├── update_telegram_menu    # 텔레그램 메뉴 수동 등록 실행 바이너리
@@ -59,6 +62,15 @@ JS-Ping/
     │   ├── V5_ROLE_BASED_ARCHITECTURE_AND_HISTORY_VIEWER.md # 🏛️ 역할 기반 아키텍처 & PING 히스토리 뷰어 상세 설계서
     │   ├── MILESTONE_PROGRESS_REPORT.md                     # 🚩 마일스톤 경과 & v5.0 차기 개발 로드맵 보고서
     │   └── DEVELOPMENT_PLAN.md                              # 📐 v5.0 코어 개발 계획서
+    ├── guide/              # 📚 [기술 가이드 및 인프라 사양서]
+    │   ├── CENTRAL_IP_PROVISIONING_AND_TEMPLATE_EXCLUSION_SPEC.md # 🌐 [중앙IP예외사양서] 중앙 마스터 IP 용도 설정 & 템플릿 원본 오가입 예외 제어 기술 사양서
+    │   ├── DYNAMIC_TAILSCALE_KEY_PROVISIONING_SPEC.md # 🛡️ [NginxIP화이트리스트] Nginx 보안 래핑 & 동적 Tailscale Auth Key 연동 사양서
+    │   ├── DEFAULT_TEMPLATE_VM_BUILD_SPEC.md # 💿 [ESXi템플릿사양서] ESXi 디폴트 템플릿 VM 제작 및 IP 기반 노드명 자동 패턴화 구축 사양서
+    │   ├── TAILSCALE_EXIT_NODE_HA_DEPLOYSPEC.md # 🛡️ [ExitNode이중화사양서] Tailscale Exit-Node HA 2호기 구축 및 무중단 승격 사양서
+    │   ├── VM_CLONE_AND_ONE_TOUCH_DEPLOY_GUIDE.md # ⚡ [ESXi클로닝가이드] ESXi VM 클로닝 & 한방 배포 스크립트(deploy.sh) 구축 가이드
+    │   ├── HEADSCALE_MIGRATION_AND_COMPARISON_GUIDE.md # 🛡️ [오픈소스전환] Headscale 자가구축 시나리오 & Tailscale 비교 분석서
+    │   ├── CLUSTER_INFRA_AND_NETWORK_TOPOLOGY.md # 🌐 [인프라명세] 클러스터 노드 배치 토폴로지 & Tailscale Exit Node/VPN 라우팅 설계서
+    │   └── MARIADB_BACKUP_AND_FAILOVER_SPECIFICATION.md # 🏛️ [백업DB명세] MariaDB 로컬 백업 DB 자산 캐시 & Failover 기술 사양서
     ├── AUTO_REBALANCING_DEVELOPMENT_PLAN.md # 📐 [자동 균등 재분배] 노드 Scale-Out PING 대상 Auto-Rebalancing 기술 개발 계획서
     ├── TELEGRAM_BOT_INTEGRATION_SUMMARY.md # [총괄 문서] 텔레그램 봇 양방향 상호작용 통합 요약서
     ├── DOCKER_OPERATIONS_GUIDE.md # [운영 가이드] 도커 생명주기, 자동 재시작 메커니즘 & 실무 명령어 매뉴얼

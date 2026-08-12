@@ -25,6 +25,7 @@ if [ "$DIR" = "/" ] && [ -d "/home/kuri" ]; then
     DIR="/home/kuri"
 fi
 cd "$DIR"
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-js-ping}"
 
 echo "=========================================================="
 echo "   🏓 JS-Ping Public Cluster Node Deployment Helper"
@@ -218,11 +219,16 @@ if [ "$RAW_TARGET" != "latest" ]; then
 else
     TARGET_VERSION="latest"
 fi
+EFFECTIVE_HOST_PATH="${HOST_REAL_PATH:-$DIR}"
+if [ "$EFFECTIVE_HOST_PATH" = "/" ] && [ -d "/home/kuri" ]; then
+    EFFECTIVE_HOST_PATH="/home/kuri"
+fi
+
 cat <<EOF > "$ENV_FILE"
-HOST_REAL_PATH=$DIR
+HOST_REAL_PATH=$EFFECTIVE_HOST_PATH
 PING_VERSION=$TARGET_VERSION
 EOF
-echo "✅ Set HOST_REAL_PATH=$DIR and PING_VERSION=$TARGET_VERSION in $ENV_FILE"
+echo "✅ Set HOST_REAL_PATH=$EFFECTIVE_HOST_PATH and PING_VERSION=$TARGET_VERSION in $ENV_FILE"
 
 # 6. Pull specified container image and start service
 echo "[Info] Pulling JS-Ping release image (Version: ${TARGET_VERSION})..."

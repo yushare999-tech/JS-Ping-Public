@@ -90,8 +90,8 @@ fi
 TARGET_USER="${SUDO_USER:-$USER}"
 if [ -n "$TARGET_USER" ] && [ "$TARGET_USER" != "root" ]; then
     echo "[Info] Configuring 'docker' group permission for user: $TARGET_USER ..."
-    groupadd docker 2>/dev/null || true
-    usermod -aG docker "$TARGET_USER" 2>/dev/null || true
+    $SUDO_CMD groupadd docker 2>/dev/null || true
+    $SUDO_CMD usermod -aG docker "$TARGET_USER" 2>/dev/null || true
     echo "✅ User '$TARGET_USER' added to 'docker' group (Take effect on next login)."
 fi
 
@@ -115,22 +115,22 @@ if [ -z "$DOCKER_COMPOSE_CMD" ]; then
 
     # Destination directory for Docker CLI plugin
     PLUGIN_DIR="/usr/libexec/docker/cli-plugins"
-    mkdir -p "$PLUGIN_DIR"
-    mkdir -p "/usr/local/bin"
+    $SUDO_CMD mkdir -p "$PLUGIN_DIR"
+    $SUDO_CMD mkdir -p "/usr/local/bin"
 
     COMPOSE_URL="https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-${COMPOSE_ARCH}"
     
     echo "[Info] Downloading Go-native binary from Github Releases ($COMPOSE_ARCH)..."
     if command -v curl &> /dev/null; then
-        curl -sSL "$COMPOSE_URL" -o "$PLUGIN_DIR/docker-compose" || true
+        $SUDO_CMD curl -sSL "$COMPOSE_URL" -o "$PLUGIN_DIR/docker-compose" || true
     elif command -v wget &> /dev/null; then
-        wget -q "$COMPOSE_URL" -O "$PLUGIN_DIR/docker-compose" || true
+        $SUDO_CMD wget -q "$COMPOSE_URL" -O "$PLUGIN_DIR/docker-compose" || true
     fi
 
     if [ -f "$PLUGIN_DIR/docker-compose" ]; then
-        chmod +x "$PLUGIN_DIR/docker-compose"
-        cp -f "$PLUGIN_DIR/docker-compose" "/usr/local/bin/docker-compose" 2>/dev/null || true
-        chmod +x "/usr/local/bin/docker-compose" 2>/dev/null || true
+        $SUDO_CMD chmod +x "$PLUGIN_DIR/docker-compose"
+        $SUDO_CMD cp -f "$PLUGIN_DIR/docker-compose" "/usr/local/bin/docker-compose" 2>/dev/null || true
+        $SUDO_CMD chmod +x "/usr/local/bin/docker-compose" 2>/dev/null || true
     fi
 
     if docker compose version &> /dev/null; then

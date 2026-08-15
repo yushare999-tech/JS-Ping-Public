@@ -32,6 +32,14 @@ echo "   🏓 JS-Ping Public Cluster Node Deployment Helper"
 echo "   Release: Official Public GHCR Container"
 echo "=========================================================="
 
+# Detect sudo prefix if non-root
+SUDO_CMD=""
+if [ "$(id -u)" -ne 0 ]; then
+    if command -v sudo &>/dev/null; then
+        SUDO_CMD="sudo"
+    fi
+fi
+
 # 1. Verify Docker installation & Auto-install Docker if missing (apt/yum/dnf + get.docker.com fallback)
 if ! command -v docker &> /dev/null; then
     echo "[Info] Docker is not installed on this system."
@@ -41,14 +49,14 @@ if ! command -v docker &> /dev/null; then
     if command -v apt-get &> /dev/null; then
         echo "[Info] Detected Ubuntu/Debian system. Installing docker.io & bash-completion..."
         export DEBIAN_FRONTEND=noninteractive
-        apt-get update -y || true
-        apt-get install -y docker.io bash-completion || true
+        $SUDO_CMD apt-get update -y || true
+        $SUDO_CMD apt-get install -y docker.io bash-completion || true
     elif command -v dnf &> /dev/null; then
         echo "[Info] Detected RHEL/Fedora/Rocky system. Installing docker & bash-completion..."
-        dnf install -y docker bash-completion || true
+        $SUDO_CMD dnf install -y docker bash-completion || true
     elif command -v yum &> /dev/null; then
         echo "[Info] Detected CentOS/RHEL system. Installing docker & bash-completion..."
-        yum install -y docker bash-completion || true
+        $SUDO_CMD yum install -y docker bash-completion || true
     fi
 
     # Fallback to official get.docker.com script if native package manager didn't set up docker
@@ -62,8 +70,8 @@ if ! command -v docker &> /dev/null; then
     fi
     
     # Start and enable Docker service daemon
-    systemctl start docker 2>/dev/null || service docker start 2>/dev/null || true
-    systemctl enable docker 2>/dev/null || true
+    $SUDO_CMD systemctl start docker 2>/dev/null || $SUDO_CMD service docker start 2>/dev/null || true
+    $SUDO_CMD systemctl enable docker 2>/dev/null || true
     
     if ! command -v docker &> /dev/null; then
         echo "❌ ERROR: Automatic Docker installation failed."
@@ -74,7 +82,7 @@ if ! command -v docker &> /dev/null; then
 else
     # Install bash-completion if missing
     if command -v apt-get &> /dev/null; then
-        dpkg -s bash-completion &>/dev/null || (apt-get update -y && apt-get install -y bash-completion) || true
+        dpkg -s bash-completion &>/dev/null || ($SUDO_CMD apt-get update -y && $SUDO_CMD apt-get install -y bash-completion) || true
     fi
 fi
 

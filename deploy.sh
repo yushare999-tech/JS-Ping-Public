@@ -50,13 +50,13 @@ if ! command -v docker &> /dev/null; then
         echo "[Info] Detected Ubuntu/Debian system. Installing docker.io & bash-completion..."
         export DEBIAN_FRONTEND=noninteractive
         $SUDO_CMD apt-get update -y || true
-        $SUDO_CMD apt-get install -y docker.io bash-completion || true
+        $SUDO_CMD apt-get install -y docker.io docker-compose-plugin bash-completion || true
     elif command -v dnf &> /dev/null; then
         echo "[Info] Detected RHEL/Fedora/Rocky system. Installing docker & bash-completion..."
-        $SUDO_CMD dnf install -y docker bash-completion || true
+        $SUDO_CMD dnf install -y docker docker-compose-plugin bash-completion || true
     elif command -v yum &> /dev/null; then
         echo "[Info] Detected CentOS/RHEL system. Installing docker & bash-completion..."
-        $SUDO_CMD yum install -y docker bash-completion || true
+        $SUDO_CMD yum install -y docker docker-compose-plugin bash-completion || true
     fi
 
     # Fallback to official get.docker.com script if native package manager didn't set up docker
@@ -121,7 +121,7 @@ if [ -z "$DOCKER_COMPOSE_CMD" ]; then
     COMPOSE_URL="https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-${COMPOSE_ARCH}"
     
     echo "[Info] Downloading Go-native binary from Github Releases ($COMPOSE_ARCH)..."
-    rm -f /tmp/docker-compose 2>/dev/null || true
+    $SUDO_CMD rm -f /tmp/docker-compose 2>/dev/null || true
     if command -v curl &> /dev/null; then
         curl -sSL "$COMPOSE_URL" -o /tmp/docker-compose || true
     elif command -v wget &> /dev/null; then

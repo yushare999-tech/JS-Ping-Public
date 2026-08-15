@@ -119,22 +119,23 @@ if [ -z "$DOCKER_COMPOSE_CMD" ]; then
     $SUDO_CMD mkdir -p "/usr/local/bin"
 
     COMPOSE_URL="https://github.com/docker/compose/releases/download/v2.29.1/docker-compose-linux-${COMPOSE_ARCH}"
+    TMP_COMPOSE="$HOME/.js-ping-docker-compose"
     
     echo "[Info] Downloading Go-native binary from Github Releases ($COMPOSE_ARCH)..."
-    $SUDO_CMD rm -f /tmp/docker-compose 2>/dev/null || true
+    rm -f "$TMP_COMPOSE" 2>/dev/null || true
     if command -v curl &> /dev/null; then
-        curl -sSL "$COMPOSE_URL" -o /tmp/docker-compose || true
+        curl -sSL "$COMPOSE_URL" -o "$TMP_COMPOSE" || true
     elif command -v wget &> /dev/null; then
-        wget -q "$COMPOSE_URL" -O /tmp/docker-compose || true
+        wget -q "$COMPOSE_URL" -O "$TMP_COMPOSE" || true
     fi
 
-    if [ -f "/tmp/docker-compose" ]; then
-        $SUDO_CMD chmod +x /tmp/docker-compose
-        $SUDO_CMD cp -f /tmp/docker-compose "$PLUGIN_DIR/docker-compose" 2>/dev/null || true
-        $SUDO_CMD cp -f /tmp/docker-compose "/usr/local/bin/docker-compose" 2>/dev/null || true
+    if [ -f "$TMP_COMPOSE" ]; then
+        $SUDO_CMD chmod +x "$TMP_COMPOSE"
+        $SUDO_CMD cp -f "$TMP_COMPOSE" "$PLUGIN_DIR/docker-compose" 2>/dev/null || true
+        $SUDO_CMD cp -f "$TMP_COMPOSE" "/usr/local/bin/docker-compose" 2>/dev/null || true
         $SUDO_CMD chmod +x "$PLUGIN_DIR/docker-compose" 2>/dev/null || true
         $SUDO_CMD chmod +x "/usr/local/bin/docker-compose" 2>/dev/null || true
-        rm -f /tmp/docker-compose 2>/dev/null || true
+        rm -f "$TMP_COMPOSE" 2>/dev/null || true
     fi
 
     if docker compose version &> /dev/null; then

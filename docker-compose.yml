@@ -8,6 +8,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ${HOST_REAL_PATH:-.}:/host_dir
       - /etc/machine-id:/etc/machine-id:ro
+      - /usr/local/bin:/host_bin
     environment:
       - HOST_DIR=/host_dir
       - HOST_REAL_PATH=${HOST_REAL_PATH}

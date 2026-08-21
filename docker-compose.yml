@@ -6,6 +6,7 @@ services:
     volumes:
       - ${HOST_REAL_PATH:-.}/config.yaml:/app/config.yaml
       - /var/run/docker.sock:/var/run/docker.sock
+      - /var/run/tailscale/tailscaled.sock:/var/run/tailscale/tailscaled.sock:ro
       - ${HOST_REAL_PATH:-.}:/host_dir
       - /etc/machine-id:/etc/machine-id:ro
       - /usr/local/bin:/host_bin
